@@ -206,5 +206,5 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Related Projects
 
-- [SnapshotTestingHEIC](https://github.com/YourUsername/SnapshotTestingHEIC) - HEIC format support
+- [SnapshotTestingHEIC](https://github.com/alexey1312/SnapshotTestingHEIC) - HEIC format support
 - [swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) - The original snapshot testing framework
