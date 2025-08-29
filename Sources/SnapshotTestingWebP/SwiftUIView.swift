@@ -1,0 +1,70 @@
+#if canImport(SwiftUI)
+import Foundation
+import SwiftUI
+@testable import SnapshotTesting
+
+#if os(iOS) || os(tvOS)
+@available(iOS 13.0, tvOS 13.0, *)
+public extension Snapshotting where Value: SwiftUI.View, Format == UIImage {
+
+    static var imageWebP: Snapshotting {
+        return .imageWebP()
+    }
+
+    static func imageWebP(
+        drawHierarchyInKeyWindow: Bool = false,
+        precision: Float = 1,
+        perceptualPrecision: Float = 1,
+        layout: SwiftUISnapshotLayout = .sizeThatFits,
+        traits: UITraitCollection = .init(),
+        compressionQuality: CompressionQuality = .lossless
+    ) -> Snapshotting {
+        let config: ViewImageConfig
+
+        switch layout {
+#if os(iOS) || os(tvOS)
+        case let .device(config: deviceConfig):
+            config = deviceConfig
+#endif
+        case .sizeThatFits:
+            config = .init(safeArea: .zero, size: nil, traits: traits)
+        case let .fixed(width: width, height: height):
+            let size = CGSize(width: width, height: height)
+            config = .init(safeArea: .zero, size: size, traits: traits)
+        }
+
+        return SimplySnapshotting.imageWebP(
+            precision: precision,
+            perceptualPrecision: perceptualPrecision,
+            scale: traits.displayScale,
+            compressionQuality: compressionQuality
+        ).asyncPullback { view in
+            var config = config
+
+            let controller: UIViewController
+
+            if config.size != nil {
+                controller = UIHostingController.init(
+                    rootView: view
+                )
+            } else {
+                let hostingController = UIHostingController.init(rootView: view)
+
+                let maxSize = CGSize(width: 0.0, height: 0.0)
+                config.size = hostingController.sizeThatFits(in: maxSize)
+
+                controller = hostingController
+            }
+
+            return snapshotView(
+                config: config.size.map { .init(safeArea: config.safeArea, size: $0, traits: config.traits) } ?? config,
+                drawHierarchyInKeyWindow: false,
+                traits: traits,
+                view: controller.view,
+                viewController: controller
+            )
+        }
+    }
+}
+#endif
+#endif

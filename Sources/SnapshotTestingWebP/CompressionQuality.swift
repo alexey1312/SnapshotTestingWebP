@@ -1,0 +1,50 @@
+import Foundation
+
+public enum CompressionQuality: Hashable, RawRepresentable {
+    /// rawValue: 1.0
+    case lossless
+    /// rawValue: 0.8
+    case low
+    /// rawValue: 0.5
+    case medium
+    /// rawValue: 0.2
+    case high
+    /// rawValue: 0.0
+    case maximum
+    /// rawValue: Custom value
+    case custom(CGFloat)
+
+    public init?(rawValue: CGFloat) {
+        switch rawValue {
+        case 1.0:
+            self = .lossless
+        case 0.8:
+            self = .low
+        case 0.5:
+            self = .medium
+        case 0.2:
+            self = .high
+        case 0.0:
+            self = .maximum
+        default:
+            self = .custom(rawValue)
+        }
+    }
+
+    public var rawValue: CGFloat {
+        switch self {
+        case .lossless:
+            return 1.0
+        case .low:
+            return 0.8
+        case .medium:
+            return 0.5
+        case .high:
+            return 0.2
+        case .maximum:
+            return 0.0
+        case let .custom(value):
+            return value
+        }
+    }
+}

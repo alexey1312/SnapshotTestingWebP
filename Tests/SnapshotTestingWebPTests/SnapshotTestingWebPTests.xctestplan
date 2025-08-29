@@ -1,0 +1,25 @@
+{
+  "configurations" : [
+    {
+      "id" : "E8F7B7A8-D0F1-4B9C-A8E2-3F4C5D6E7F8A",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "testExecutionOrdering" : "random"
+  },
+  "testTargets" : [
+    {
+      "parallelizable" : true,
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "SnapshotTestingWebPTests",
+        "name" : "SnapshotTestingWebPTests"
+      }
+    }
+  ],
+  "version" : 1
+}
