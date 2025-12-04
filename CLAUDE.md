@@ -101,6 +101,29 @@ The library extends SnapshotTesting's `Snapshotting` and `Diffing` types using t
 - Lossy mode with optimized presets and advanced parameters
 - Memory-managed encoding with WebPMemoryWriter
 
+## Testing Notes
+
+### Running Tests
+
+- CI uses `swift test` on macOS, reference snapshots are generated for macOS
+- iOS tests require specific simulator (iPhone 13)
+- Snapshots are stored in `Tests/SnapshotTestingWebPTests/__Snapshots__/`
+
+### Re-recording Snapshots
+
+To re-record snapshots, delete existing snapshot files and run tests:
+
+```bash
+rm -rf Tests/SnapshotTestingWebPTests/__Snapshots__/
+swift test
+```
+
+### Test UI Components
+
+The test suite uses complex UI screens for realistic compression testing:
+- `SwiftUIView.swift` - Complex SwiftUI view with gradients, cards, lists for iOS/tvOS
+- `TestNSView.swift` - Complex NSView with profile UI, cards, activity feed for macOS
+
 ## Key Testing Patterns
 
 ### Compression Quality Testing
