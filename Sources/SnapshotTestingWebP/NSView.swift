@@ -26,11 +26,29 @@
                 return view.snapshot
                     ?? Async { callback in
                         addImagesForRenderedViews(view).sequence().run { views in
-                            let bitmapRep = view.bitmapImageRepForCachingDisplay(in: view.bounds)!
-                            view.cacheDisplay(in: view.bounds, to: bitmapRep)
-                            // Use pixel size from bitmapRep for consistency with WebP loading
-                            let imageSize = CGSize(width: bitmapRep.pixelsWide, height: bitmapRep.pixelsHigh)
-                            let image = NSImage(size: imageSize)
+                            // Use explicit 1x scale for consistent rendering across different displays
+                            let width = Int(view.bounds.width)
+                            let height = Int(view.bounds.height)
+                            let bitmapRep = NSBitmapImageRep(
+                                bitmapDataPlanes: nil,
+                                pixelsWide: width,
+                                pixelsHigh: height,
+                                bitsPerSample: 8,
+                                samplesPerPixel: 4,
+                                hasAlpha: true,
+                                isPlanar: false,
+                                colorSpaceName: .calibratedRGB,
+                                bytesPerRow: width * 4,
+                                bitsPerPixel: 32
+                            )!
+                            bitmapRep.size = view.bounds.size
+
+                            NSGraphicsContext.saveGraphicsState()
+                            NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmapRep)
+                            view.displayIgnoringOpacity(view.bounds, in: NSGraphicsContext.current!)
+                            NSGraphicsContext.restoreGraphicsState()
+
+                            let image = NSImage(size: view.bounds.size)
                             image.addRepresentation(bitmapRep)
                             callback(image)
                             views.forEach { $0.removeFromSuperview() }

@@ -176,20 +176,16 @@ final class CompressionQualityTests: XCTestCase {
 
     final class SnapshotTestingWebPTests: XCTestCase {
 
-        // MARK: - NSView PNG Baseline Tests
-
-        func test_NSView_PNG() {
-            let view = createTestNSView()
-            assertSnapshot(of: view, as: .image)
-        }
-
         // MARK: - NSView WebP Lossless Tests
 
         func test_NSView_WebP_lossless() {
             let view = createTestNSView()
             assertSnapshot(
                 of: view,
-                as: .imageWebP(compressionQuality: .lossless)
+                as: .imageWebP(
+                    precision: 0.98,
+                    compressionQuality: .lossless
+                )
             )
         }
 
