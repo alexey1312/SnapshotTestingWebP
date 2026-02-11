@@ -21,7 +21,9 @@
                 let initialSize = view.frame.size
                 if let size = size { view.frame.size = size }
                 guard view.frame.width > 0, view.frame.height > 0 else {
-                    fatalError("View not renderable to image at size \(view.frame.size)")
+                    return Async { callback in
+                        callback(errorImage("View not renderable to image at size \(view.frame.size)"))
+                    }
                 }
                 return view.snapshot
                     ?? Async { callback in
@@ -57,5 +59,22 @@
                     }
             }
         }
+    }
+
+    /// Creates an NSImage with an error message rendered on a red background.
+    func errorImage(_ message: String) -> NSImage {
+        let size = NSSize(width: 400, height: 80)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        NSColor.red.setFill()
+        NSBezierPath.fill(NSRect(origin: .zero, size: size))
+        let attributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: NSColor.white,
+            .font: NSFont.systemFont(ofSize: 12),
+        ]
+        let text = "Error: \(message)\nPlease set an explicit size in the test." as NSString
+        text.draw(in: NSRect(x: 8, y: 8, width: size.width - 16, height: size.height - 16), withAttributes: attributes)
+        image.unlockFocus()
+        return image
     }
 #endif
