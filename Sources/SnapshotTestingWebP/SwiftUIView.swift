@@ -44,11 +44,14 @@
                     let controller: UIViewController
 
                     if config.size != nil {
-                        controller = UIHostingController.init(
+                        let hostingController = UIHostingController.init(
                             rootView: view
                         )
+                        hostingController.view.backgroundColor = .systemBackground
+                        controller = hostingController
                     } else {
                         let hostingController = UIHostingController.init(rootView: view)
+                        hostingController.view.backgroundColor = .systemBackground
 
                         let maxSize = CGSize(width: 0.0, height: 0.0)
                         config.size = hostingController.sizeThatFits(in: maxSize)

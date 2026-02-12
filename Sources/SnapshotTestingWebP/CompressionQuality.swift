@@ -1,41 +1,17 @@
 import Foundation
 
-/// Defines the WebP compression quality level for snapshot encoding.
-///
-/// Each level maps to a `CGFloat` in the range `0.0...1.0`, where `1.0` means
-/// lossless (pixel-perfect) and `0.0` means maximum lossy compression.
-///
-/// ## Recommended precision thresholds
-///
-/// When using lossy compression, pixel data changes during encoding. Use the
-/// `precision` and `perceptualPrecision` parameters in snapshot strategies to
-/// account for this. Recommended values per quality level:
-///
-/// | Quality     | rawValue | precision | perceptualPrecision | Notes                        |
-/// |-------------|----------|-----------|---------------------|------------------------------|
-/// | `.lossless` | 1.0      | 1.0       | 1.0                 | Pixel-perfect, no tolerance  |
-/// | `.low`      | 0.8      | 0.95      | 0.98                | Minor artifacts              |
-/// | `.medium`   | 0.5      | 0.90      | 0.95                | Visible compression          |
-/// | `.high`     | 0.2      | 0.85      | 0.90                | Heavy compression            |
-/// | `.maximum`  | 0.0      | 0.80      | 0.85                | Maximum compression          |
-///
-/// - `precision`: Fraction of bytes that must match exactly (0.0–1.0).
-///   At 0.95, up to 5% of pixel bytes may differ.
-/// - `perceptualPrecision`: Human-perceptual similarity threshold (0.0–1.0),
-///   based on CIE Lab Delta E. At 0.98, colors within Delta E ~2 are accepted
-///   (Delta E 2.3 is the "just noticeable difference").
 public enum CompressionQuality: Hashable, RawRepresentable {
-    /// Lossless encoding (rawValue: 1.0). Pixel-perfect output.
+    /// rawValue: 1.0
     case lossless
-    /// Low compression (rawValue: 0.8). Minimal quality loss.
+    /// rawValue: 0.8
     case low
-    /// Medium compression (rawValue: 0.5). Good size/quality balance.
+    /// rawValue: 0.5
     case medium
-    /// High compression (rawValue: 0.2). Significant size reduction.
+    /// rawValue: 0.2
     case high
-    /// Maximum compression (rawValue: 0.0). Smallest file size.
+    /// rawValue: 0.0
     case maximum
-    /// Custom quality value. Clamped to 0.0...1.0 range.
+    /// rawValue: Custom value
     case custom(CGFloat)
 
     public init?(rawValue: CGFloat) {
@@ -51,7 +27,7 @@ public enum CompressionQuality: Hashable, RawRepresentable {
         case 0.0:
             self = .maximum
         default:
-            self = .custom(min(max(rawValue, 0), 1))
+            self = .custom(rawValue)
         }
     }
 
@@ -68,7 +44,7 @@ public enum CompressionQuality: Hashable, RawRepresentable {
         case .maximum:
             return 0.0
         case let .custom(value):
-            return min(max(value, 0), 1)
+            return value
         }
     }
 }

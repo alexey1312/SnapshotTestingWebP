@@ -22,9 +22,7 @@
                 let initialSize = view.frame.size
                 if let size = size { view.frame.size = size }
                 guard view.frame.width > 0, view.frame.height > 0 else {
-                    return Async { callback in
-                        callback(errorImage("View not renderable to image at size \(view.frame.size)"))
-                    }
+                    fatalError("View not renderable to image at size \(view.frame.size)")
                 }
                 return view.snapshot
                     ?? Async { callback in

@@ -16,7 +16,7 @@
                 fromData: { NSImage(data: $0) ?? NSImage() }
             ) { old, new in
                 guard
-                    let message = compareWebP(
+                    !compareWebP(
                         old,
                         new,
                         precision: precision,
@@ -25,6 +25,10 @@
                     )
                 else { return nil }
                 let difference = diffNSImage(old, new)
+                let message =
+                    new.size == old.size
+                    ? "Newly-taken snapshot does not match reference."
+                    : "Newly-taken snapshot@\(new.size) does not match reference@\(old.size)."
                 return (
                     message,
                     [XCTAttachment(image: old), XCTAttachment(image: new), XCTAttachment(image: difference)]
@@ -54,42 +58,29 @@
         }
     }
 
-    /// Compares two NSImages for WebP snapshot testing.
-    ///
-    /// Returns `nil` if the images match within the given thresholds,
-    /// or a descriptive error message explaining the mismatch.
     private func compareWebP(
         _ old: NSImage,
         _ new: NSImage,
         precision: Float,
         perceptualPrecision: Float,
         compressionQuality: CompressionQuality
-    ) -> String? {
-        guard let oldCgImage = old.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            return "Reference image could not be loaded."
-        }
-        guard let newCgImage = new.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            return "Newly-taken snapshot could not be loaded."
-        }
-        guard newCgImage.width != 0, newCgImage.height != 0 else {
-            return "Newly-taken snapshot is empty."
-        }
-        guard oldCgImage.width == newCgImage.width, oldCgImage.height == newCgImage.height else {
-            return "Newly-taken snapshot@\(new.size) does not match reference@\(old.size)."
-        }
+    ) -> Bool {
+        guard let oldCgImage = old.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return false }
+        guard let newCgImage = new.cgImage(forProposedRect: nil, context: nil, hints: nil) else { return false }
+        guard oldCgImage.width != 0, newCgImage.width != 0 else { return false }
+        guard oldCgImage.height != 0, newCgImage.height != 0 else { return false }
+        guard oldCgImage.width == newCgImage.width, oldCgImage.height == newCgImage.height else { return false }
 
         guard let oldContext = context(for: oldCgImage),
             let newContext = context(for: newCgImage),
             let oldData = oldContext.data,
             let newData = newContext.data
-        else {
-            return "Reference image's data could not be loaded."
-        }
+        else { return false }
 
         let byteCount = oldContext.height * oldContext.bytesPerRow
 
         // Fast path: exact match
-        if memcmp(oldData, newData, byteCount) == 0 { return nil }
+        if memcmp(oldData, newData, byteCount) == 0 { return true }
 
         // Re-encode and compare to account for WebP codec differences
         guard let webpData = new.webpData(compressionQuality: compressionQuality.rawValue),
@@ -97,17 +88,13 @@
             let reencodedCgImage = reencoded.cgImage(forProposedRect: nil, context: nil, hints: nil),
             let reencodedContext = context(for: reencodedCgImage),
             let reencodedData = reencodedContext.data
-        else {
-            return "Newly-taken snapshot's data could not be loaded."
-        }
+        else { return false }
 
-        if memcmp(oldData, reencodedData, byteCount) == 0 { return nil }
+        if memcmp(oldData, reencodedData, byteCount) == 0 { return true }
 
         let compareContext = reencodedContext
 
-        if precision >= 1, perceptualPrecision >= 1 {
-            return "Newly-taken snapshot does not match reference."
-        }
+        if precision >= 1, perceptualPrecision >= 1 { return false }
 
         // Perceptual comparison using CILabDeltaE
         if perceptualPrecision < 1 {
@@ -138,12 +125,9 @@
                             colorSpace: nil
                         )
                         let averageDeltaE = pixel[0]
+                        // DeltaE of 2.3 is considered just noticeable difference
                         let maxAcceptableDeltaE = (1 - perceptualPrecision) * 100
-                        if averageDeltaE <= maxAcceptableDeltaE { return nil }
-
-                        let actualPerceptualPrecision = 1 - averageDeltaE / 100
-                        return
-                            "Actual perceptual precision \(actualPerceptualPrecision) is less than required \(perceptualPrecision)"
+                        if averageDeltaE <= maxAcceptableDeltaE { return true }
                     }
                 }
             }
@@ -154,9 +138,7 @@
         let compareCgImage = compareContext.makeImage()!
         let newRep = NSBitmapImageRep(cgImage: compareCgImage)
 
-        guard let p1 = oldRep.bitmapData, let p2 = newRep.bitmapData else {
-            return "Image bitmap data could not be accessed."
-        }
+        guard let p1 = oldRep.bitmapData, let p2 = newRep.bitmapData else { return false }
 
         let pixelCount = oldRep.pixelsWide * oldRep.pixelsHigh
         let totalBytes = pixelCount * 4
@@ -166,19 +148,16 @@
         for offset in 0 ..< totalBytes {
             if p1[offset] != p2[offset] {
                 differentByteCount += 1
-                if differentByteCount > threshold {
-                    let actualPrecision = 1 - Float(differentByteCount) / Float(totalBytes)
-                    return "Actual image precision \(actualPrecision) is less than required \(precision)"
-                }
+                if differentByteCount > threshold { return false }
             }
         }
 
-        return nil
+        return true
     }
 
     private func context(for cgImage: CGImage) -> CGContext? {
+        let space = CGColorSpaceCreateDeviceRGB()
         guard
-            let space = cgImage.colorSpace,
             let context = CGContext(
                 data: nil,
                 width: cgImage.width,

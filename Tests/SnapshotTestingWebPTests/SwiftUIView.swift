@@ -3,136 +3,24 @@
 
     @available(iOS 15.0, tvOS 15.0, *)
     struct SwiftUIView: View {
-        @State private var selectedTab: Int = 0
-        @State private var showingAlert: Bool = false
-        @State private var searchText: String = "WebP Testing"
-        @State private var items: [ListItem] = ListItem.sampleData
-
         var body: some View {
-            TabView(selection: $selectedTab) {
-                dashboardTab
-                    .tabItem {
-                        Image(systemName: "house.fill")
-                        Text("Dashboard")
-                    }
-                    .tag(0)
-
-                listTab
-                    .tabItem {
-                        Image(systemName: "list.bullet")
-                        Text("Items")
-                    }
-                    .tag(1)
-
-                settingsTab
-                    .tabItem {
-                        Image(systemName: "gear")
-                        Text("Settings")
-                    }
-                    .tag(2)
-            }
-            .accentColor(.purple)
-        }
-
-        private var dashboardTab: some View {
             NavigationView {
                 ScrollView {
-                    LazyVStack(spacing: 20) {
+                    VStack(spacing: 20) {
                         headerCard
                         metricsGrid
                         chartCard
                         recentActivityCard
+                        itemsList
+                        settingsCard
                     }
                     .padding()
                 }
+                .background(Color(.systemGroupedBackground))
                 .navigationTitle("WebP Dashboard")
-                .navigationBarTitleDisplayMode(.automatic)
+                .navigationBarTitleDisplayMode(.large)
             }
-        }
-
-        private var listTab: some View {
-            NavigationView {
-                VStack {
-                    SearchBar(text: $searchText)
-
-                    List {
-                        ForEach(filteredItems) { item in
-                            ListItemRow(item: item)
-                        }
-                        .onDelete(perform: deleteItems)
-                    }
-                    .listStyle(InsetGroupedListStyle())
-                }
-                .navigationTitle("Test Items")
-                .navigationBarItems(trailing: addButton)
-            }
-        }
-
-        private var settingsTab: some View {
-            NavigationView {
-                Form {
-                    Section(header: Text("WebP Configuration")) {
-                        HStack {
-                            Image(systemName: "photo.on.rectangle")
-                                .foregroundColor(.blue)
-                            Text("Image Format")
-                            Spacer()
-                            Text("WebP")
-                                .foregroundColor(.secondary)
-                        }
-
-                        HStack {
-                            Image(systemName: "speedometer")
-                                .foregroundColor(.green)
-                            Text("Compression Speed")
-                            Spacer()
-                            Text("Fast")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-
-                    Section(header: Text("Quality Settings")) {
-                        QualitySettingRow(title: "Lossless", isEnabled: true)
-                        QualitySettingRow(title: "High Quality", isEnabled: false)
-                        QualitySettingRow(title: "Balanced", isEnabled: true)
-                        QualitySettingRow(title: "Maximum Compression", isEnabled: false)
-                    }
-
-                    Section(header: Text("Advanced")) {
-                        HStack {
-                            Image(systemName: "cpu")
-                                .foregroundColor(.orange)
-                            Text("Hardware Acceleration")
-                            Spacer()
-                            Text("Enabled")
-                                .foregroundColor(.green)
-                        }
-
-                        HStack {
-                            Image(systemName: "memorychip")
-                                .foregroundColor(.red)
-                            Text("Memory Usage")
-                            Spacer()
-                            Text("12.4 MB")
-                                .foregroundColor(.secondary)
-                        }
-                    }
-
-                    Section {
-                        Button("Reset to Defaults") {
-                            showingAlert = true
-                        }
-                        .foregroundColor(.red)
-                    }
-                }
-                .navigationTitle("Settings")
-                .alert("Reset Settings", isPresented: $showingAlert) {
-                    Button("Cancel", role: .cancel) {}
-                    Button("Reset", role: .destructive) {}
-                } message: {
-                    Text("This will reset all WebP settings to their default values.")
-                }
-            }
+            .navigationViewStyle(.stack)
         }
 
         private var headerCard: some View {
@@ -207,6 +95,8 @@
             }
         }
 
+        private static let barHeights: [CGFloat] = [65, 85, 45, 95, 70, 55, 80]
+
         private var chartCard: some View {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Performance Trends")
@@ -217,7 +107,7 @@
                         VStack {
                             RoundedRectangle(cornerRadius: 4)
                                 .fill(Color.blue.opacity(0.7))
-                                .frame(width: 30, height: CGFloat.random(in: 40 ... 100))
+                                .frame(width: 30, height: Self.barHeights[index])
 
                             Text("D\(index + 1)")
                                 .font(.caption)
@@ -245,7 +135,7 @@
                         icon: "checkmark.circle.fill",
                         color: .green,
                         title: "WebP Compression Completed",
-                        subtitle: "image_set_001.png → 2.1MB saved"
+                        subtitle: "image_set_001.png -> 2.1MB saved"
                     )
 
                     ActivityRow(
@@ -271,104 +161,45 @@
             )
         }
 
-        private var addButton: some View {
-            Button(action: addItem) {
-                Image(systemName: "plus")
+        private var itemsList: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Test Items")
+                    .font(.headline)
+
+                ForEach(ListItem.sampleData) { item in
+                    ListItemRow(item: item)
+                }
             }
-        }
-
-        private var filteredItems: [ListItem] {
-            if searchText.isEmpty {
-                return items
-            } else {
-                return items.filter { $0.title.localizedCaseInsensitiveContains(searchText) }
-            }
-        }
-
-        private func deleteItems(offsets: IndexSet) {
-            items.remove(atOffsets: offsets)
-        }
-
-        private func addItem() {
-            let newItem = ListItem(
-                title: "New Test Item \(items.count + 1)",
-                subtitle: "Generated for testing",
-                status: .pending
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.systemBackground))
+                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
             )
-            items.append(newItem)
         }
-    }
 
-    struct SearchBar: View {
-        @Binding var text: String
+        private var settingsCard: some View {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Configuration")
+                    .font(.headline)
 
-        var body: some View {
-            HStack {
-                Image(systemName: "magnifyingglass")
-                    .foregroundColor(.secondary)
-
-                TextField("Search items...", text: $text)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-            }
-            .padding(.horizontal)
-        }
-    }
-
-    struct ListItemRow: View {
-        let item: ListItem
-
-        var body: some View {
-            HStack {
-                Image(systemName: item.status.icon)
-                    .foregroundColor(item.status.color)
-                    .frame(width: 24)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(item.title)
-                        .font(.headline)
-
-                    Text(item.subtitle)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-
-                Spacer()
-
-                Text(item.status.displayName)
-                    .font(.caption)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(item.status.color.opacity(0.2))
-                    )
-                    .foregroundColor(item.status.color)
-            }
-            .padding(.vertical, 4)
-        }
-    }
-
-    struct QualitySettingRow: View {
-        let title: String
-        let isEnabled: Bool
-
-        var body: some View {
-            HStack {
-                Image(systemName: isEnabled ? "checkmark.circle.fill" : "circle")
-                    .foregroundColor(isEnabled ? .green : .secondary)
-
-                Text(title)
-
-                Spacer()
-
-                if isEnabled {
-                    Text("Active")
-                        .font(.caption)
-                        .foregroundColor(.green)
+                VStack(spacing: 8) {
+                    SettingRow(icon: "photo.on.rectangle", color: .blue, title: "Image Format", value: "WebP")
+                    SettingRow(icon: "speedometer", color: .green, title: "Compression Speed", value: "Fast")
+                    SettingRow(icon: "cpu", color: .orange, title: "Hardware Acceleration", value: "Enabled")
+                    SettingRow(icon: "memorychip", color: .red, title: "Memory Usage", value: "12.4 MB")
                 }
             }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.systemBackground))
+                    .shadow(color: Color.black.opacity(0.1), radius: 4, x: 0, y: 2)
+            )
         }
     }
+
+    // MARK: - Supporting Views
 
     @available(iOS 15.0, tvOS 15.0, *)
     struct StatisticView: View {
@@ -456,6 +287,65 @@
         }
     }
 
+    struct ListItemRow: View {
+        let item: ListItem
+
+        var body: some View {
+            HStack {
+                Image(systemName: item.status.icon)
+                    .foregroundColor(item.status.color)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(item.title)
+                        .font(.subheadline)
+
+                    Text(item.subtitle)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                Spacer()
+
+                Text(item.status.displayName)
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(item.status.color.opacity(0.2))
+                    )
+                    .foregroundColor(item.status.color)
+            }
+            .padding(.vertical, 2)
+        }
+    }
+
+    struct SettingRow: View {
+        let icon: String
+        let color: Color
+        let title: String
+        let value: String
+
+        var body: some View {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(color)
+                    .frame(width: 24)
+
+                Text(title)
+                    .font(.subheadline)
+
+                Spacer()
+
+                Text(value)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.vertical, 4)
+        }
+    }
+
     struct ListItem: Identifiable {
         let id = UUID()
         let title: String
@@ -504,7 +394,7 @@
     }
 
     @available(iOS 15.0, tvOS 15.0, *)
-    struct ComplexSwiftUIView_Previews: PreviewProvider {
+    struct SwiftUIView_Previews: PreviewProvider {
         static var previews: some View {
             SwiftUIView()
                 .preferredColorScheme(.light)

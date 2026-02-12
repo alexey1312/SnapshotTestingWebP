@@ -94,6 +94,7 @@ final class CompressionQualityTests: XCTestCase {
             assertSnapshot(
                 of: view,
                 as: .imageWebP(
+                    precision: 0.98,
                     layout: .device(config: .iPhone13(.landscape)),
                     compressionQuality: .lossless
                 )
