@@ -18,13 +18,13 @@ Real-world comparison using a complex SwiftUI dashboard (iPhone 13, portrait) wi
 
 | Format | Size | Reduction |
 |--------|------|-----------|
-| PNG | 224 KB | baseline |
-| WebP Lossless | 212 KB | **5% smaller** |
-| WebP Medium | 66 KB | **71% smaller** |
-| WebP Maximum | 27 KB | **88% smaller** |
+| PNG | 230 KB | baseline |
+| WebP Lossless | 53 KB | **77% smaller** |
+| WebP Medium | 49 KB | **79% smaller** |
+| WebP Maximum | 20 KB | **91% smaller** |
 
-> Lossless WebP savings depend heavily on image content — gradient-heavy UIs compress similarly to PNG.
-> Lossy WebP consistently delivers **70–90% savings** with acceptable visual quality.
+> WebP lossless delivers **~77% savings** on typical UI content thanks to optimized compression (libwebp method=2).
+> Lossy WebP consistently delivers **79–91% savings** with acceptable visual quality.
 > These results can be verified in the package's test snapshots directory.
 
 ## Features
@@ -199,7 +199,7 @@ The API is designed to be a drop-in replacement for existing snapshot strategies
 
 ## Dependencies
 
-- [swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) (1.18.6+)
+- [swift-snapshot-testing](https://github.com/pointfreeco/swift-snapshot-testing) (1.18.9+)
 - [libwebp](https://github.com/the-swift-collective/libwebp) (1.4.1+)
 
 ## Related Projects

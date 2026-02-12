@@ -4,35 +4,57 @@ import libwebp
 
 extension CGImage {
     func webpData(quality: Float) -> Data? {
-        guard let pixelData = extractPixelData() else { return nil }
+        let pixelStart = CFAbsoluteTimeGetCurrent()
+        guard let (pixelData, extractedBytesPerRow) = extractPixelData() else { return nil }
         defer { pixelData.deallocate() }
+        let pixelDuration = CFAbsoluteTimeGetCurrent() - pixelStart
 
-        let bytesPerRow = 4 * width
-        let originalSize = height * bytesPerRow
-        let startTime = CFAbsoluteTimeGetCurrent()
+        let originalSize = height * extractedBytesPerRow
+        let encodeStart = CFAbsoluteTimeGetCurrent()
 
         guard let data = encodeWebP(
             pixelData: pixelData,
             width: width,
             height: height,
-            bytesPerRow: bytesPerRow,
+            bytesPerRow: extractedBytesPerRow,
             quality: quality
         ) else { return nil }
 
-        let duration = CFAbsoluteTimeGetCurrent() - startTime
+        let encodeDuration = CFAbsoluteTimeGetCurrent() - encodeStart
         WebPEncodingStatistics.last = WebPEncodingStatistics(
             originalSize: originalSize,
             encodedSize: data.count,
-            encodingDuration: duration
+            pixelExtractionDuration: pixelDuration,
+            webpEncodingDuration: encodeDuration
         )
 
         return data
     }
 
-    private func extractPixelData() -> UnsafeMutablePointer<UInt8>? {
-        let bytesPerPixel = 4
-        let bytesPerRow = bytesPerPixel * width
-        let pixelDataSize = height * bytesPerRow
+    /// Returns pixel data and the bytes-per-row used.
+    /// Fast path: if the CGImage is already 32-bit RGBA, copies pixels directly from the data provider.
+    /// Fallback: renders through CGContext (handles color space conversion, non-RGBA formats, etc.).
+    private func extractPixelData() -> (UnsafeMutablePointer<UInt8>, Int)? {
+        // Fast path: direct provider access for compatible RGBA images
+        if bitsPerPixel == 32,
+           bitsPerComponent == 8,
+           let colorSpace = colorSpace,
+           colorSpace.model == .rgb,
+           alphaInfo == .premultipliedLast || alphaInfo == .last || alphaInfo == .noneSkipLast,
+           let provider = dataProvider,
+           let data = provider.data {
+            let length = CFDataGetLength(data)
+            let expectedLength = height * bytesPerRow
+            if length >= expectedLength {
+                let ptr = UnsafeMutablePointer<UInt8>.allocate(capacity: expectedLength)
+                CFDataGetBytes(data, CFRange(location: 0, length: expectedLength), ptr)
+                return (ptr, bytesPerRow)
+            }
+        }
+
+        // Fallback: CGContext rendering
+        let targetBytesPerRow = 4 * width
+        let pixelDataSize = height * targetBytesPerRow
 
         let pixelData = UnsafeMutablePointer<UInt8>.allocate(capacity: pixelDataSize)
 
@@ -42,7 +64,7 @@ extension CGImage {
                 width: width,
                 height: height,
                 bitsPerComponent: 8,
-                bytesPerRow: bytesPerRow,
+                bytesPerRow: targetBytesPerRow,
                 space: CGColorSpaceCreateDeviceRGB(),
                 bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
             )
@@ -52,7 +74,7 @@ extension CGImage {
         }
 
         context.draw(self, in: CGRect(x: 0, y: 0, width: width, height: height))
-        return pixelData
+        return (pixelData, targetBytesPerRow)
     }
 
     private func encodeWebP(
@@ -70,19 +92,21 @@ extension CGImage {
             }
             config.lossless = 1
             config.exact = 1
-            config.method = 0
+            config.method = 2
             config.thread_level = 1
         } else {
             if WebPConfigPreset(&config, WEBP_PRESET_PICTURE, quality * 100) == 0 {
                 return nil
             }
-            config.method = 0
+            config.method = 2
             config.thread_level = 1
             config.alpha_compression = 1
             config.alpha_filtering = 1
             config.alpha_quality = Int32(quality * 100)
-            config.pass = 1
-            config.preprocessing = 0
+            config.pass = 2
+            config.preprocessing = 1
+            config.use_sharp_yuv = 1
+            config.autofilter = 1
             config.exact = 1
         }
 

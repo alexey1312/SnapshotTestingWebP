@@ -9,8 +9,15 @@ public struct WebPEncodingStatistics: Sendable {
     public let originalSize: Int
     /// Encoded WebP data size in bytes.
     public let encodedSize: Int
-    /// Time spent encoding, in seconds.
-    public let encodingDuration: TimeInterval
+    /// Time spent extracting pixel data from CGImage, in seconds.
+    public let pixelExtractionDuration: TimeInterval
+    /// Time spent in libwebp encoding, in seconds.
+    public let webpEncodingDuration: TimeInterval
+
+    /// Total encoding duration (pixel extraction + WebP encoding).
+    public var encodingDuration: TimeInterval {
+        pixelExtractionDuration + webpEncodingDuration
+    }
 
     /// Ratio of original size to encoded size (e.g. 10.0 means 10x smaller).
     public var compressionRatio: Double {
