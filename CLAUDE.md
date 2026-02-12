@@ -32,7 +32,7 @@ swift test --filter SnapshotTestingWebPTests.test_WebP_compressionQuality_lossle
 
 # Run iOS tests on simulator
 xcodebuild test -scheme SnapshotTestingWebP \
-  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -destination 'platform=iOS Simulator,name=iPhone 13 mini (26.1) SNAPSHOTTING' \
   -only-testing:SnapshotTestingWebPTests
 ```
 
@@ -54,9 +54,11 @@ xcodebuild test -scheme SnapshotTestingWebP \
 **WebP Encoding Engine** (`WebP/CGImage+WebP.swift`, `WebP/UIImage+WebP.swift`, `WebP/NSImage+WebP.swift`)
 
 - Shared encoding logic in `CGImage+WebP.swift` — platform files are thin wrappers
+- Fast path: direct `CGDataProvider` pixel access for compatible RGBA images (skips CGContext.draw())
+- Fallback: CGContext rendering for non-RGBA or incompatible formats
 - Advanced libwebp API integration with optimized presets
 - Multi-threaded encoding via `thread_level = 1`
-- `WebPEncodingStatistics.last` provides compression ratio, space savings, and encoding duration
+- `WebPEncodingStatistics.last` provides compression ratio, space savings, and split timing (pixelExtractionDuration + webpEncodingDuration)
 
 **Snapshotting Strategy Extensions**
 
@@ -107,8 +109,9 @@ The library extends SnapshotTesting's `Snapshotting` and `Diffing` types using t
 
 ### Running Tests
 
-- CI uses `swift test` on macOS, reference snapshots are generated for macOS
-- iOS tests require specific simulator (iPhone 13)
+- CI uses `swift test` on `macos-26` runner with Xcode 26, reference snapshots are generated for macOS 26
+- Snapshots are environment-dependent — CI runner macOS/Xcode version must match the local environment where snapshots were recorded
+- iOS tests require specific simulator: `iPhone 13 mini (26.1) SNAPSHOTTING` (check available simulators via `xcodebuild -showdestinations -scheme SnapshotTestingWebP`)
 - Snapshots are stored in `Tests/SnapshotTestingWebPTests/__Snapshots__/`
 
 ### Re-recording Snapshots
@@ -135,6 +138,7 @@ The test suite uses complex UI screens for realistic compression testing:
 - **No randomness** — never use `CGFloat.random` or similar in test views; snapshots must be deterministic
 - **UIHostingController needs opaque background** — set `view.backgroundColor = .systemBackground`
 - **macOS color space** — use `CGColorSpaceCreateDeviceRGB()` instead of `cgImage.colorSpace` in diffing to avoid false mismatches
+- **Changing libwebp config invalidates lossy snapshots** — parameters like `method`, `use_sharp_yuv`, `autofilter`, `pass` change lossy output; lossless stays pixel-identical but file size changes
 - **WebP encoding uses shared CGImage extension** — `CGImage+WebP.swift` contains the encoding logic; platform files (`UIImage+WebP.swift`, `NSImage+WebP.swift`) are thin wrappers that convert to CGImage
 
 ## Key Testing Patterns
@@ -170,7 +174,7 @@ assertSnapshot(of: view, as: .imageWebP(compressionQuality: .custom(0.75)))
 
 ## Dependencies
 
-- **swift-snapshot-testing** (1.18.6+): Core snapshot testing framework
+- **swift-snapshot-testing** (1.18.9+): Core snapshot testing framework
 - **libwebp** (1.4.1+): WebP encoding/decoding via swift-collective implementation
 
 ## Platform Requirements

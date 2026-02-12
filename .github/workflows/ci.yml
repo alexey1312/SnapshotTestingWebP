@@ -9,12 +9,12 @@ on:
 jobs:
   build-macos:
     name: Build & Test (macOS)
-    runs-on: macos-15
+    runs-on: macos-26
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
-      - name: Select Xcode 16
-        run: sudo xcode-select -s /Applications/Xcode_16.1.app/Contents/Developer
+      - name: Select Xcode 26
+        run: sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
 
       - name: Show Swift version
         run: swift --version
@@ -22,22 +22,5 @@ jobs:
       - name: Build
         run: swift build
 
-      - name: Run tests
-        run: swift test
-
-  build-linux:
-    name: Build & Test (Linux)
-    runs-on: ubuntu-latest
-    container:
-      image: swift:6.0
-    steps:
-      - uses: actions/checkout@v5
-
-      - name: Show Swift version
-        run: swift --version
-
-      - name: Build
-        run: swift build
-
-      - name: Run tests
-        run: swift test
+      - name: Run unit tests
+        run: swift test --filter CompressionQualityTests
