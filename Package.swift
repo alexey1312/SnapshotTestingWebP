@@ -19,7 +19,7 @@ let package = Package(
     dependencies: [
         .package(name: "swift-snapshot-testing",
                  url: "https://github.com/pointfreeco/swift-snapshot-testing.git",
-                 from: "1.18.6"),
+                 from: "1.18.9"),
         .package(url: "https://github.com/the-swift-collective/libwebp.git", from: "1.4.1"),
     ],
     targets: [
