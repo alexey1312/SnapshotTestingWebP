@@ -21,7 +21,7 @@
                 let initialSize = view.frame.size
                 if let size = size { view.frame.size = size }
                 guard view.frame.width > 0, view.frame.height > 0 else {
-                    fatalError("View not renderable to image at size \(view.frame.size)")
+                    return Async(value: errorImage(size: view.frame.size))
                 }
                 return view.snapshot
                     ?? Async { callback in
@@ -57,5 +57,21 @@
                     }
             }
         }
+    }
+
+    private func errorImage(size: CGSize) -> NSImage {
+        let imageSize = NSSize(width: 400, height: 80)
+        let image = NSImage(size: imageSize)
+        image.lockFocus()
+        NSColor.red.setFill()
+        NSRect(origin: .zero, size: imageSize).fill()
+        let text = "Error: View not renderable at size \(size). Set explicit size in test."
+        let attrs: [NSAttributedString.Key: Any] = [
+            .foregroundColor: NSColor.white,
+            .font: NSFont.systemFont(ofSize: 12),
+        ]
+        (text as NSString).draw(at: NSPoint(x: 10, y: 30), withAttributes: attrs)
+        image.unlockFocus()
+        return image
     }
 #endif

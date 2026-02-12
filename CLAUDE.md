@@ -30,8 +30,10 @@ swift test
 # Run specific test
 swift test --filter SnapshotTestingWebPTests.test_WebP_compressionQuality_lossless
 
-# Run tests with test plan
-swift test --testplan Tests/SnapshotTestingWebPTests/SnapshotTestingWebPTests.xctestplan
+# Run iOS tests on simulator
+xcodebuild test -scheme SnapshotTestingWebP \
+  -destination 'platform=iOS Simulator,name=iPhone 16' \
+  -only-testing:SnapshotTestingWebPTests
 ```
 
 ### Snapshot Management
@@ -49,12 +51,12 @@ swift test --testplan Tests/SnapshotTestingWebPTests/SnapshotTestingWebPTests.xc
 - Defines WebP compression levels: `.lossless`, `.low`, `.medium`, `.high`, `.maximum`, `.custom(CGFloat)`
 - Maps to libwebp quality values (0.0-1.0 range)
 
-**WebP Encoding Engine** (`WebP/UIImage+WebP.swift`, `WebP/NSImage+WebP.swift`)
+**WebP Encoding Engine** (`WebP/CGImage+WebP.swift`, `WebP/UIImage+WebP.swift`, `WebP/NSImage+WebP.swift`)
 
-- Hardware-accelerated preprocessing using vImage framework
+- Shared encoding logic in `CGImage+WebP.swift` — platform files are thin wrappers
 - Advanced libwebp API integration with optimized presets
-- Multi-threaded encoding for ~75-80% performance improvement
-- Smart image scaling with optimal dimension limits
+- Multi-threaded encoding via `thread_level = 1`
+- `WebPEncodingStatistics.last` provides compression ratio, space savings, and encoding duration
 
 **Snapshotting Strategy Extensions**
 
@@ -118,11 +120,22 @@ rm -rf Tests/SnapshotTestingWebPTests/__Snapshots__/
 swift test
 ```
 
+Re-recording requires two passes: first run records, second run verifies.
+For full re-record (macOS + iOS), run `swift test` twice then `xcodebuild test` twice.
+
 ### Test UI Components
 
 The test suite uses complex UI screens for realistic compression testing:
-- `SwiftUIView.swift` - Complex SwiftUI view with gradients, cards, lists for iOS/tvOS
+- `SwiftUIView.swift` - ScrollView-based dashboard with cards, metrics, charts for iOS/tvOS
 - `TestNSView.swift` - Complex NSView with profile UI, cards, activity feed for macOS
+
+### Snapshot Testing Gotchas
+
+- **No TabView in test views** — TabView content doesn't render in headless UIHostingController snapshots
+- **No randomness** — never use `CGFloat.random` or similar in test views; snapshots must be deterministic
+- **UIHostingController needs opaque background** — set `view.backgroundColor = .systemBackground`
+- **macOS color space** — use `CGColorSpaceCreateDeviceRGB()` instead of `cgImage.colorSpace` in diffing to avoid false mismatches
+- **WebP encoding uses shared CGImage extension** — `CGImage+WebP.swift` contains the encoding logic; platform files (`UIImage+WebP.swift`, `NSImage+WebP.swift`) are thin wrappers that convert to CGImage
 
 ## Key Testing Patterns
 

@@ -6,6 +6,14 @@
     public extension Diffing where Value == UIImage {
         static let imageWebP = Diffing.imageWebP()
 
+        /// Creates a WebP-based image diffing strategy.
+        /// - Parameters:
+        ///   - precision: Byte-level match ratio (0.0–1.0). 1.0 requires exact match.
+        ///   - perceptualPrecision: CIE Lab Delta E threshold (0.0–1.0).
+        ///     Maps to max acceptable Delta E = (1 - perceptualPrecision) * 100.
+        ///     Delta E 2.3 is the just noticeable difference (perceptualPrecision ~0.977).
+        ///   - scale: Image scale factor. Defaults to screen scale.
+        ///   - compressionQuality: WebP compression level. See ``CompressionQuality`` for recommended precision values.
         static func imageWebP(
             precision: Float = 1,
             perceptualPrecision: Float = 1,

@@ -14,15 +14,17 @@ WebP provides excellent compression with high image quality, resulting in signif
 
 ## File Size Comparison
 
-Real-world comparison using a complex 500x600 UI layout with gradients, shadows, cards, and text:
+Real-world comparison using a complex SwiftUI dashboard (iPhone 13, portrait) with gradients, shadows, cards, and text:
 
 | Format | Size | Reduction |
 |--------|------|-----------|
-| PNG | 304 KB | baseline |
-| WebP Lossless | 201 KB | **34% smaller** |
-| WebP Medium | 31 KB | **90% smaller** |
-| WebP Maximum | 11 KB | **96% smaller** |
+| PNG | 224 KB | baseline |
+| WebP Lossless | 212 KB | **5% smaller** |
+| WebP Medium | 66 KB | **71% smaller** |
+| WebP Maximum | 27 KB | **88% smaller** |
 
+> Lossless WebP savings depend heavily on image content — gradient-heavy UIs compress similarly to PNG.
+> Lossy WebP consistently delivers **70–90% savings** with acceptable visual quality.
 > These results can be verified in the package's test snapshots directory.
 
 ## Features
